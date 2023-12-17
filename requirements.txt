@@ -1,0 +1,10 @@
+Flask
+gunicorn 
+encord
+entsoe-py
+pandas
+python-dotenv
+oauthlib
+requests 
+requests_oauthlib
+sentinelhub

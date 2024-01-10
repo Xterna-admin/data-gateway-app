@@ -3,7 +3,7 @@ from app import app
 from flask import jsonify
 from flask import request
 
-from modules.encordSync import list_data_rows, upload_all_images
+from modules.encordSync import list_data_rows, upload_all_images, pull_labels
 from modules.sentinel import get_data_collections, get_sat_images_for_stations, get_stations_list
 from modules.entsoe import get_entsoe_data
 
@@ -13,6 +13,7 @@ def api():
   # return in JSON format. (For API)
   return jsonify({"message":"Hello from Flask!"})
 
+# Example: http://localhost:6969/entsoe?country_code=AT&start=20230101&end=20230102 
 @app.route('/entsoe')
 def entsoe():
   country_code = request.args.get('country_code')
@@ -39,6 +40,11 @@ def encord():
     json_rows.append(serialized_row)
 
   return jsonify(json_rows)
+
+@app.route('/encord/labels')
+def encord_labels():
+  # return in JSON format. (For API)
+  return jsonify(pull_labels())
 
 @app.route('/encord/upload_all_images')
 def encord_upload_all_images():

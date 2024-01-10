@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import json
 from typing import Dict, List
 from encord import EncordUserClient
@@ -75,3 +76,30 @@ def integrity_check():
 
     print(f"Serialized data written to {file_path_json}")
 
+def get_projects():
+    user_client = EncordUserClient.create_with_ssh_private_key(get_private_key_file())
+    projects: List[Dict] = user_client.get_projects()
+    return projects
+
+def pull_labels():
+    user_client = EncordUserClient.create_with_ssh_private_key(get_private_key_file())
+    projects = get_projects()
+    labels: List[Dict] = []
+    after_date = datetime.now() - timedelta(days=1)
+    for project in projects:
+        print(project)
+        if (project.get('project').get('title').find('Forward') == -1):
+            continue
+        project_hash = project.get('project').get('project_hash')
+        myProject = user_client.get_project(project_hash)
+        print(myProject)
+        label_rows = myProject.label_rows
+        for label_row in label_rows:
+            if (label_row.get('label_status') == 'LABELLED'):
+                date_object = datetime.strptime(label_row.get('last_edited_at') , '%Y-%m-%d %H:%M:%S')
+
+                if date_object > after_date:
+                    labels.append(myProject.get_label_row(label_row.get('label_hash')))
+                else:
+                    print(f"Label is too old => {date_object}")
+    return labels       

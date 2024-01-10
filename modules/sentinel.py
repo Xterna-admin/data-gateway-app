@@ -10,10 +10,8 @@ from modules.config import get_sentinel_clientSecret
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 from sentinelhub import SentinelHubDownloadClient
-from sentinelhub import SentinelHubRequest
 from sentinelhub import DataCollection
 from sentinelhub import SHConfig
-from sentinelhub.geometry import BBox, CRS
 import requests
 
 from modules.stations import loadStationsFromCsv

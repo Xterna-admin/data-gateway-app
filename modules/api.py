@@ -2,10 +2,12 @@
 from app import app
 from flask import jsonify
 from flask import request
+from datetime import datetime, timedelta
 
-from modules.encordSync import list_data_rows, upload_all_images, pull_labels
-from modules.sentinel import get_data_collections, get_sat_images_for_stations, get_stations_list
-from modules.entsoe import get_entsoe_data
+from modules.encordSync import list_data_rows, upload_all_images, pull_labels, upload_image_file
+from modules.sentinel import download_yesterday_image_for_station, get_data_collections, get_sat_images_for_stations, get_stations_list
+from modules.entsoe import convert_files, get_entsoe_data
+from modules.config import get_encord_forward_bridge, get_entsoe_input_dir, get_entsoe_output_dir
 
 # Define route "/api".
 @app.route('/api')
@@ -20,7 +22,14 @@ def entsoe():
   start = request.args.get('start')
   end = request.args.get('end')
  
-  return jsonify(get_entsoe_data(country_code, start, end))
+  return get_entsoe_data(country_code, start, end)
+
+@app.route('/entsoe/convert_files')
+def entsoe_convert_files():
+  input_dir = get_entsoe_input_dir()
+  output_dir = get_entsoe_output_dir()
+ 
+  return convert_files(input_dir, output_dir)
 
 @app.route('/encord')
 def encord():
@@ -41,15 +50,31 @@ def encord():
 
   return jsonify(json_rows)
 
+# http://localhost:6969/encord/labels?for_date=2024-01-09
 @app.route('/encord/labels')
 def encord_labels():
-  # return in JSON format. (For API)
-  return jsonify(pull_labels())
+  project_hash = request.args.get('project_hash', get_encord_forward_bridge())
+  print(project_hash)
+  project_name_like = request.args.get('project_name_like')
+  yesterday = datetime.now() - timedelta(days=1)
+  dy = yesterday.strftime("%Y-%m-%d")
+  for_date = request.args.get('for_date', dy)
+  print(for_date)
+
+  return jsonify(pull_labels(project_hash=project_hash, project_name_like=project_name_like, for_date=for_date))
 
 @app.route('/encord/upload_all_images')
 def encord_upload_all_images():
   upload_all_images()
-  return jsonify({"message":"Uloaded all images to Encord!"})
+  return jsonify({"message":"Uploaded all images to Encord"})
+
+# http://localhost:6969/encord/upload_image?filename=Andong-power-station-12-01-2024.jpg
+# {"data_hash":"d13cf1b6-a794-4428-b11e-d6555264a645","file_link":"cord-images-prod/19emyUB3TaSkhuacBApD0LpwapD3/d13cf1b6-a794-4428-b11e-d6555264a645","title":"Andong-power-station-12-01-2024.jpg"}
+@app.route('/encord/upload_image')
+def encord_upload_image():
+  print(request.args)
+  filename = request.args.get('filename')
+  return jsonify(upload_image_file(filename))
 
 @app.route('/sentinel')
 def sentinel():
@@ -66,3 +91,24 @@ def sentinel_stations():
 def sentinel_stations_images():
   stations = get_stations_list()
   return jsonify(get_sat_images_for_stations(stations))
+
+# http://localhost:6969/sentinel/station_image_yesterday?station=Andong%20power%20station&l1=128.545254&l2=36.599082&l3=128.537342&l4=36.59273&collectionID=34170c46-7edb-491d-8a5e-69e7bfd4a741
+#   my_dict = {
+  #     'collectionID': request.args.get('collectionID', ''),
+  #     'l1': request.args.get('l1', ''),
+  #     'l2': request.args.get('l2', ''),
+  #     'l3': request.args.get('l3', ''),
+  #     'l4': request.args.get('l4', ''),
+  #     'station': request.args.get('station', '')
+  # }
+@app.route('/sentinel/station_image_yesterday')
+def sentinel_station_image_yesterday():
+  return jsonify(download_yesterday_image_for_station(request.args))
+
+# http://localhost:6969/encord/sync_station_image_yesterday?station=Andong%20power%20station&l1=128.545254&l2=36.599082&l3=128.537342&l4=36.59273&collectionID=34170c46-7edb-491d-8a5e-69e7bfd4a741
+@app.route('/encord/sync_station_image_yesterday')
+def sentinel_sync_station_image_yesterday():
+  image_download = download_yesterday_image_for_station(request.args)
+  print(image_download)
+  image_upload = upload_image_file(image_download.get('image_filename'))
+  return jsonify({"download": image_download, "upload": image_upload})

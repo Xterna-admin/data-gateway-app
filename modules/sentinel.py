@@ -17,8 +17,12 @@ import requests
 from modules.stations import loadStationsFromCsv
 from datetime import datetime, timedelta
 
+token = [None]
+
 def get_oauth_token():
 
+    if token[0]:
+        return token[0]['access_token']
     # Your client credentials
     client_id = get_sentinel_clientId()
     client_secret = get_sentinel_clientSecret()
@@ -28,10 +32,10 @@ def get_oauth_token():
     oauth = OAuth2Session(client=client)
 
     # Get token for the session
-    token = oauth.fetch_token(token_url='https://services.sentinel-hub.com/oauth/token',
+    token[0] = oauth.fetch_token(token_url='https://services.sentinel-hub.com/oauth/token',
                             client_secret=client_secret, include_client_id=True)
 
-    return token['access_token']
+    return token[0]['access_token']
 
 def get_sh_config():
 
@@ -65,9 +69,10 @@ def download_yesterday_image_for_station(station: Dict):
     station_name = station['station'].replace(' ', '-')
     image_filename = f"{station_name}-{in_date}.jpg"
 
-    download_image_for_station(station, dy, image_filename)
+    response = download_image_for_station(station, dy, image_filename)
+    print(f"Downloaded image for station {station_name} on {in_date} with response {response}")
 
-    return image_filename
+    return response
 
 def get_data_collections():
     # create a client that can call the Sentinel Hub API using standard python HTTPS client
@@ -86,7 +91,8 @@ def get_stations_list():
     return stations
 
 def download_image_for_station(station: Dict, date: str, image_filename: str):
-    bearer = "Bearer {}".format(get_oauth_token())
+    token = get_oauth_token()
+    bearer = "Bearer {}".format(token)
     url = "https://services.sentinel-hub.com/api/v1/process"
     headers = {
     "Content-Type": "application/json",
@@ -129,8 +135,14 @@ def download_image_for_station(station: Dict, date: str, image_filename: str):
     "evalscript": "//VERSION=3\n//True Color\n\nfunction setup() {\n  return {\n    input: [\"Red\", \"Green\", \"Blue\", \"dataMask\"],\n    output: { bands: 4 }\n  };\n}\n\nfunction evaluatePixel(sample) {\n  return [sample.Red/3000, \n          sample.Green/3000, \n          sample.Blue/3000,\n          sample.dataMask];\n}"
     }
 
-    response = requests.post(url, headers=headers, json=data)
+    response:requests.Response = requests.post(url, headers=headers, json=data)
+    if response.status_code != 200:
+        print(f"Error downloading image for station {station} on {date} with response {response.json()}")
+        return {'image_filename': image_filename, 'size': -1, 'status': 'error'}
     # save jpeg image bytes to response to file
     with open(get_images_path() + image_filename, 'wb') as f:
         f.write(response.content)
-    return response
+
+    # get the file size
+    file_size = Path(get_images_path() + image_filename).stat().st_size
+    return {'image_filename': image_filename, 'size': file_size, 'status': 'success'}

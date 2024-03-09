@@ -46,16 +46,61 @@ def get_images_path():
         print(f"Using tmpdir {tempfile.gettempdir()} for images. Please provide a Images Path in .env file.")
     return os.getenv('IMAGES_PATH', tempfile.gettempdir())
 
-def get_encord_forward_bridge():
+def get_encord_forward_bridge_project():
     if (os.getenv('ENCORD_FORWARD_BRIDGE_PROJECT') == None):
         print("Please provide a Encord Forward Bridge in .env file.")
     return os.getenv('ENCORD_FORWARD_BRIDGE_PROJECT', None)
+
+def get_encord_legacy_bridge_project():
+    if (os.getenv('ENCORD_LEGACY_BRIDGE_PROJECT') == None):
+        print("Please provide a Encord Forward Bridge in .env file.")
+    return os.getenv('ENCORD_LEGACY_BRIDGE_PROJECT', None)
+
+def get_legacy_bridge_dataset_id():
+    if (os.getenv('ENCORD_LEGACY_BRIDGE_DATASET') == None):
+        print("Please provide a ENCORD_LEGACY_BRIDGE_DATASET in .env file.")
+    return os.getenv('ENCORD_LEGACY_BRIDGE_DATASET', None)
+
+def get_forward_bridge_dataset_id():
+    if (os.getenv('ENCORD_FORWARD_BRIDGE_DATASET') == None):
+        print("Please provide a ENCORD_LEGACY_BRIDGE_DATASET in .env file.")
+    return os.getenv('ENCORD_FORWARD_BRIDGE_DATASET', None)
+
+def get_catchups_bridge_dataset_id():
+    if (os.getenv('ENCORD_CATCHUPS_DATASET') == None):
+        print("Please provide a ENCORD_CATCHUPS_DATASET in .env file.")
+    return os.getenv('ENCORD_CATCHUPS_DATASET', None)
+
+def get_dataset_id(bridge: str):
+    if bridge == "forward":
+        return get_forward_bridge_dataset_id()
+    elif bridge == "legacy":
+        return get_legacy_bridge_dataset_id()
+    elif bridge == "catchups":
+        return get_catchups_bridge_dataset_id()
+    else:
+        return get_test_dataset_id()
+    
+def get_project_hash(bridge: str):
+    if bridge == "forward":
+        return get_encord_forward_bridge_project()
+    elif bridge == "legacy":
+        return get_encord_legacy_bridge_project()
+    else:
+        return get_encord_legacy_bridge_project()
 
 def get_entsoe_input_dir():
     if (os.getenv('ENTSOE_INPUT_DIR') == None):
         print("Please provide a Entsoe Input Directory in .env file.")
     return os.getenv('ENTSOE_INPUT_DIR', None)
+
 def get_entsoe_output_dir():
     if (os.getenv('ENTSOE_OUTPUT_DIR') == None):
         print("Please provide a Entsoe Output Directory in .env file.")
     return os.getenv('ENTSOE_OUTPUT_DIR', None)
+
+def get_all_bridges_datahashes():
+    if (os.getenv('ALL_BRIDGES_DATAHASHES') == None):
+        print("Please provide a config for ALL_BRIDGES_DATAHASHES in .env file.")
+    return os.getenv('ALL_BRIDGES_DATAHASHES', None)
+

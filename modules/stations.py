@@ -19,12 +19,12 @@ def loadStationsFromCsv(csv_file):
             reader = csv.DictReader(file, delimiter=',')
             for row in reader:
                 station = {
-                    'station': row['station'],
-                    'l1': float(row['l1']),
-                    'l2': float(row['l2']),
-                    'l3': float(row['l3']),
-                    'l4': float(row['l4']),
-                    'collectionID': row['collectionID']
+                    'station': row['Name'].strip(),
+                    'l1': float(row['L1']),
+                    'l2': float(row['L2']),
+                    'l3': float(row['L3']),
+                    'l4': float(row['L4']),
+                    'collectionID': row['Collection ID']
                 }
                 stations.append(station)
     except FileNotFoundError:

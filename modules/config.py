@@ -89,11 +89,6 @@ def get_project_hash(bridge: str):
     else:
         return get_encord_legacy_bridge_project()
 
-def get_entsoe_input_dir():
-    if (os.getenv('ENTSOE_INPUT_DIR') == None):
-        print("Please provide a Entsoe Input Directory in .env file.")
-    return os.getenv('ENTSOE_INPUT_DIR', None)
-
 def get_entsoe_output_dir():
     if (os.getenv('ENTSOE_OUTPUT_DIR') == None):
         print("Please provide a Entsoe Output Directory in .env file.")
@@ -103,4 +98,9 @@ def get_all_bridges_datahashes():
     if (os.getenv('ALL_BRIDGES_DATAHASHES') == None):
         print("Please provide a config for ALL_BRIDGES_DATAHASHES in .env file.")
     return os.getenv('ALL_BRIDGES_DATAHASHES', None)
+
+def get_entsoe_csv_path():
+    if (os.getenv('ENTSOE_CSV_PATH') == None):
+        print("Please provide a Entsoe CSV Path in .env file.")
+    return os.getenv('ENTSOE_CSV_PATH', None)
 

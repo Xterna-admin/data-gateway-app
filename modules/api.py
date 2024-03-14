@@ -7,8 +7,8 @@ import threading
 
 from modules.encordSync import list_data_rows, upload_all_images, pull_labels, upload_image_file
 from modules.sentinel import delete_images_with_date_format_check, download_all_sat_images_between_dates, download_yesterday_image_for_station, get_sat_images_for_stations, get_stations_list
-from modules.entsoe import convert_files, get_entsoe_data
-from modules.config import get_encord_legacy_bridge_project, get_entsoe_input_dir, get_entsoe_output_dir
+from modules.entsoe import convert_files_legacy_format, convert_files_new_format, get_entsoe_data, get_entsoe_data_all_countries
+from modules.config import get_encord_legacy_bridge_project, get_entsoe_csv_path, get_entsoe_output_dir
 
 @app.before_request
 def handle_every_request():
@@ -21,6 +21,14 @@ def api():
   # return in JSON format. (For API)
   return jsonify({"message":"Hello from Flask!"})
 
+# Example: http://localhost:6969/entsoe/all?start=20230101&end=20230102 
+@app.route('/entsoe/all')
+def entsoe_all():
+  start = request.args.get('start')
+  end = request.args.get('end')
+ 
+  return get_entsoe_data_all_countries(start, end)
+
 # Example: http://localhost:6969/entsoe?country_code=AT&start=20230101&end=20230102 
 @app.route('/entsoe')
 def entsoe():
@@ -32,10 +40,10 @@ def entsoe():
 
 @app.route('/entsoe/convert_files')
 def entsoe_convert_files():
-  input_dir = get_entsoe_input_dir()
+  input_dir = get_entsoe_csv_path()
   output_dir = get_entsoe_output_dir()
  
-  return convert_files(input_dir, output_dir)
+  return convert_files_new_format(input_dir, output_dir)
 
 # http://localhost:6969/encord?bridge=legacy
 @app.route('/encord')

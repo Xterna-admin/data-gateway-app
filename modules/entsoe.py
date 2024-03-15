@@ -11,7 +11,6 @@ from pytz import country_timezones, timezone
 
 def get_entsoe_data_all_countries(start: str, end: str):
     country_list = ['AT','BA','BE','BG','CH','CZ','DE','DK','EE','ES','FI','FR','GR','HR','HU','IE','IT','LT','LU','LV','ME','MK','NL','NO','PL','PT','RO','RS','SE','SK','XK']
-    # country_list = ['BA','BG','CZ','DE','EE','GR','HR','HU','IE','LU','ME','MK','PL','RO','RS','SK']
     all_data = {}
     for country in country_list:
         print(f"Getting data for {country}")

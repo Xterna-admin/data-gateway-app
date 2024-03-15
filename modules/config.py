@@ -94,6 +94,11 @@ def get_entsoe_output_dir():
         print("Please provide a Entsoe Output Directory in .env file.")
     return os.getenv('ENTSOE_OUTPUT_DIR', None)
 
+def get_entsoe_archive_dir():
+    if (os.getenv('ENTSOE_ARCHIVE_DIR') == None):
+        print("Please provide a Entsoe ARCHIVE Directory in .env file.")
+    return os.getenv('ENTSOE_ARCHIVE_DIR', None)
+
 def get_all_bridges_datahashes():
     if (os.getenv('ALL_BRIDGES_DATAHASHES') == None):
         print("Please provide a config for ALL_BRIDGES_DATAHASHES in .env file.")

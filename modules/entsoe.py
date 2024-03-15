@@ -11,7 +11,6 @@ from pytz import country_timezones, timezone
 
 def get_entsoe_data_all_countries(start: str, end: str):
     country_list = ['AT','BA','BE','BG','CH','CZ','DE','DK','EE','ES','FI','FR','GR','HR','HU','IE','IT','LT','LU','LV','ME','MK','NL','NO','PL','PT','RO','RS','SE','SK','XK']
-    # country_list = ['BA','BG','CZ','DE','EE','GR','HR','HU','IE','LU','ME','MK','PL','RO','RS','SK']
     all_data = {}
     for country in country_list:
         print(f"Getting data for {country}")
@@ -67,13 +66,13 @@ def transform_to_csv(json_data, country_code):
                 elif are_all_strings_in_array(key, ['Nuclear','Aggregated']):
                     rows[date_str]['Nuclear'] = val
 
-    file_name = get_entsoe_csv_path() + f'{country_code}-entsoe_data.csv'
+    file_name = get_entsoe_csv_path() + f'/{country_code}-entsoe_data.csv'
     with open(file_name, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=headers)
         writer.writeheader()
         writer.writerows(rows.values())
 
-    return file_name
+    return {"file":file_name, "country":country_code}
 
 def convert_files_legacy_format(input_dir: str, output_dir: str):
     # Input and output directories
@@ -99,11 +98,11 @@ def convert_files_legacy_format(input_dir: str, output_dir: str):
 
             # Group by date and aggregate the values, preserving other columns
             df_grouped = df.groupby([df.index.date, 'Country']).agg({
-                'Fossil Brown coal/Lignite': 'sum',
-                'Fossil Gas': 'sum',
-                'Fossil Hard coal': 'sum',
-                'Nuclear': 'sum'
-            }).round(0).reset_index()
+                'Fossil Brown coal/Lignite': 'mean',
+                'Fossil Gas': 'mean',
+                'Fossil Hard coal': 'mean',
+                'Nuclear': 'mean'
+            }).round(0).multiply(24).reset_index()
 
             # Add new static columns for 'Source' and 'Reading Type'
             df_grouped['Source'] = 'entsoe'
@@ -119,13 +118,11 @@ def convert_files_legacy_format(input_dir: str, output_dir: str):
             output_file = os.path.join(output_directory, 'converted-' + file)
             df_grouped.to_csv(output_file, index=False)
 
-            # return the number of files processed
-    return f"Processed {len(os.listdir(input_directory))} files."
-
 def convert_files_new_format(input_dir: str, output_dir: str):
     # Input and output directories
     input_directory = input_dir
     output_directory = output_dir
+    processed_files = []
 
     # Process all CSV files in the input directory
     for file in os.listdir(input_directory):
@@ -139,19 +136,43 @@ def convert_files_new_format(input_dir: str, output_dir: str):
 
             # Group by date and aggregate the values, preserving other columns
             df_grouped = df.groupby([df.index.date, 'Country']).agg({
-                'Brown Coal': 'sum',
-                'Gas': 'sum',
-                'Hard Coal': 'sum',
-                'Nuclear': 'sum'
-            }).round(0).reset_index()
+                'Brown Coal': 'mean',
+                'Gas': 'mean',
+                'Hard Coal': 'mean',
+                'Nuclear': 'mean'
+            }).multiply(24).round(0).reset_index()
 
             # Add new static columns for 'Source' and 'Reading Type'
             df_grouped['Source'] = 'entsoe'
             df_grouped['Reading Type'] = 'actual'
+            df_grouped.rename(columns={'level_0': 'Reading date'}, inplace=True)
 
             # Save to a new CSV file with the 'converted-' prefix
             output_file = os.path.join(output_directory, 'converted-' + file)
             df_grouped.to_csv(output_file, index=False)
+            processed_files.append({"file": output_file})
+            # move file to archive folder
+            os.rename(os.path.join(input_directory, file), os.path.join(input_directory + '-archive', file))
 
-            # return the number of files processed
-    return f"Processed {len(os.listdir(input_directory))} files."
+    print(f"Processed {len(os.listdir(input_directory))} files.")
+    return processed_files
+
+def archive_converted_files(input_dir: str, output_dir: str):
+    # Input and output directories
+    input_directory = input_dir
+    output_directory = output_dir
+    archived_files = []
+
+    # Process all CSV files in the input directory
+    for file in os.listdir(input_directory):
+        if file.startswith("converted-"):
+            # Move the file to the output directory
+            print(f"Archiving file: {file}")
+            os.rename(os.path.join(input_directory, file), os.path.join(output_directory, file))
+            archived_files.append({"file": file})
+
+    print(f"Processed {len(os.listdir(input_directory))} files.")
+    return archived_files
+
+
+    print(f"Archived {len(os.listdir(output_directory))} files.")

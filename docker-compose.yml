@@ -1,12 +1,12 @@
 # docker compose file version 3 to launch python flask application
-version: 3
+version: "3"
 
 # services to be launched
 
 services:
   # service 1: python flask application
   data-gateway:
-    image: data-gateway:8
+    image: data-gateway-app:1
     # expose port 5000
     ports:
       - "6969:6969"
@@ -18,9 +18,7 @@ services:
       - SENTINEL_CLIENT_ID=cadeaf66-cd7b-4678-ac58-b3d09b56e99d
       - SENTINEL_CLIENT_SECRET=0eQddDgLVmLbWaOo5AybRTVrLViXmB2B
       - STATIONS_CSV_PATH=/app/config/stations.csv
-      - IMAGES_PATH=/app/config/images/
-      - ENCORD_TEST_DATASET=d5e93353-9aaf-437d-948e-7cdbf37ed80c
-      - ENCORD_FORWARD_BRIDGE_DATASET=227ab75e-e12d-4f85-b468-71ea39c145ce
+      - IMAGES_PATH=/app/data/images/
       - ENTSOE_API_KEY=c4700b5b-2451-4389-ab69-ce8d62e7280b
       - ENTSOE_OUTPUT_DIR=/app/data/entsoe-revised-output
       - ENTSOE_ARCHIVE_DIR=/app/data/entsoe-revised-archive

@@ -99,7 +99,7 @@ def integrity_check(bridge: str):
 
     print(f"Serialized data written to {file_path_json}")
 
-def get_project(bridge: str, project_name_like: str):
+def get_project(bridge: str, project_name_like: str = None):
     user_client = EncordUserClient.create_with_ssh_private_key(get_private_key_file())
     if (bridge):
         return user_client.get_project(get_project_hash(bridge))
@@ -124,6 +124,19 @@ def pull_labels(bridge: str, project_name_like: str, for_date: str):
             if for_date is None or (date_object >= start_date and date_object < end_date):
                 full_label_row = myProject.get_label_row(label_row.get('label_hash'))
                 labels.append({"date": date_object,"label": full_label_row, "classification": get_classification_answer_value(full_label_row)})
+    return labels       
+
+def pull_all_labels(bridge: str):
+    myProject = get_project(bridge)
+    labels: List[Dict] = []
+    labels_to_return: List[Dict] = []
+    label_rows = myProject.label_rows
+    for label_row in label_rows:
+        if label_row.get('label_status') == 'LABELLED':
+            full_label_row = myProject.get_label_row(label_row.get('label_hash'))
+            labels.append({"label": full_label_row, "classification": get_classification_answer_value(full_label_row)})
+    for label in labels:
+        labels_to_return.append({""})
     return labels       
 
 def get_classification_answer_value(data: dict):

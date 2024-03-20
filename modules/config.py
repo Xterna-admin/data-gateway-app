@@ -56,6 +56,11 @@ def get_encord_legacy_bridge_project():
         print("Please provide a Encord Forward Bridge in .env file.")
     return os.getenv('ENCORD_LEGACY_BRIDGE_PROJECT', None)
 
+def get_encord_catchups_bridge_project():
+    if (os.getenv('ENCORD_CATCHUPS_PROJECT') == None):
+        print("Please provide a Encord Catchups Bridge in .env file.")
+    return os.getenv('ENCORD_CATCHUPS_PROJECT', None)
+
 def get_legacy_bridge_dataset_id():
     if (os.getenv('ENCORD_LEGACY_BRIDGE_DATASET') == None):
         print("Please provide a ENCORD_LEGACY_BRIDGE_DATASET in .env file.")
@@ -86,6 +91,8 @@ def get_project_hash(bridge: str):
         return get_encord_forward_bridge_project()
     elif bridge == "legacy":
         return get_encord_legacy_bridge_project()
+    elif bridge == "catchups":
+        return get_encord_catchups_bridge_project()
     else:
         return get_encord_legacy_bridge_project()
 

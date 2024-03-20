@@ -5,7 +5,7 @@ from flask import request
 from datetime import datetime, timedelta
 import threading
 
-from modules.encordSync import list_data_rows, upload_all_images, pull_labels, upload_image_file
+from modules.encordSync import list_data_rows, pull_all_labels, upload_all_images, pull_labels, upload_image_file
 from modules.sentinel import delete_images_with_date_format_check, download_all_sat_images_between_dates, download_yesterday_image_for_station, get_sat_images_for_stations, get_stations_list
 from modules.entsoe import archive_converted_files, convert_files_legacy_format, convert_files_new_format, get_entsoe_data, get_entsoe_data_all_countries
 from modules.config import get_encord_legacy_bridge_project, get_entsoe_archive_dir, get_entsoe_csv_path, get_entsoe_output_dir
@@ -72,7 +72,7 @@ def encord():
 
   return jsonify(json_rows)
 
-# http://localhost:6969/encord/labels?for_date=2024-01-09
+# http://localhost:6969/encord/labels?project_name_like=Catchup&for_date=2024-01-09
 @app.route('/encord/labels')
 def encord_labels():
   project_hash = request.args.get('project_hash', get_encord_legacy_bridge_project())
@@ -83,6 +83,13 @@ def encord_labels():
   print(for_date)
 
   return jsonify(pull_labels(project_hash=project_hash, project_name_like=project_name_like, for_date=for_date))
+
+# http://localhost:6969/encord/labels/all?bridge=catchups
+@app.route('/encord/labels/all')
+def encord_labels_all():
+  bridge = request.args.get('bridge', 'forward')
+
+  return jsonify(pull_all_labels(bridge))
 
 @app.route('/encord/upload_all_images')
 def encord_upload_all_images():

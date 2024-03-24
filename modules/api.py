@@ -4,11 +4,15 @@ from flask import jsonify
 from flask import request
 from datetime import datetime, timedelta
 import threading
+import csv
+import os
+import uuid
 
+from modules.encordClassificationsSync import sync_encord_labels
 from modules.encordSync import list_data_rows, pull_all_labels, upload_all_images, pull_labels, upload_image_file
 from modules.sentinel import delete_images_with_date_format_check, download_all_sat_images_between_dates, download_yesterday_image_for_station, get_sat_images_for_stations, get_stations_list
 from modules.entsoe import archive_converted_files, convert_files_legacy_format, convert_files_new_format, get_entsoe_data, get_entsoe_data_all_countries
-from modules.config import get_encord_legacy_bridge_project, get_entsoe_archive_dir, get_entsoe_csv_path, get_entsoe_output_dir
+from modules.config import get_encord_csv_path, get_encord_legacy_bridge_project, get_entsoe_archive_dir, get_entsoe_csv_path, get_entsoe_output_dir
 
 @app.before_request
 def handle_every_request():
@@ -84,12 +88,45 @@ def encord_labels():
 
   return jsonify(pull_labels(project_hash=project_hash, project_name_like=project_name_like, for_date=for_date))
 
-# http://localhost:6969/encord/labels/all?bridge=catchups
+# http://localhost:6969/encord/labels/all?bridge=catchups&media_type=csv|json&format=simple|full
 @app.route('/encord/labels/all')
 def encord_labels_all():
   bridge = request.args.get('bridge', 'forward')
+  all_labels = pull_all_labels(bridge)
+  format = request.args.get('format', 'simple')
+  media_type = request.args.get('media_type', 'csv')
+  data_to_return = []
+  if format == 'full':
+    data_to_return = all_labels
+  else:
+    data_to_return = transform_labels(all_labels)
+  if media_type == 'json':
+    return jsonify(data_to_return)
+  else:
+    return save_to_csv(data_to_return)
+  
+def save_to_csv(data):
+  file_name = f'{get_encord_csv_path()}/encord_labels_{uuid.uuid4()}.csv'
+  print(f'Saving to file: {file_name}')
+  with open(file_name, 'w', newline='') as csvfile:
+    writer = csv.DictWriter(csvfile, fieldnames=data[0].keys())
+    writer.writeheader()
+    writer.writerows(data)
+  return {'filename':file_name}
 
-  return jsonify(pull_all_labels(bridge))
+@app.route('/encord/labels/sync-classifications')
+def sync_encord_classification_labels():
+  sync_encord_labels()
+  
+def transform_labels(all_labels):
+  return [{
+    'data_hash': label.get('label').get('data_hash', ''),
+    'data_title': label.get('label').get('data_title', ''),
+    'answer': label.get('classification').get('answer_value',''),
+    'file_link': label.get('label').get('file_link', ''),
+    'label_hash': label.get('label').get('label_hash', ''),
+    'last_edited_at': label.get('label').get('last_edited_at', ''),
+  } for label in all_labels]
 
 @app.route('/encord/upload_all_images')
 def encord_upload_all_images():

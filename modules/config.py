@@ -116,3 +116,10 @@ def get_entsoe_csv_path():
         print("Please provide a Entsoe CSV Path in .env file.")
     return os.getenv('ENTSOE_CSV_PATH', None)
 
+def get_encord_csv_path():
+    if (os.getenv('ENCORD_CSV_PATH') == None):
+        print("Please provide a Encord CSV Path in .env file.")
+    return os.getenv('ENCORD_CSV_PATH', None)
+
+
+

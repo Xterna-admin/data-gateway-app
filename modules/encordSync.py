@@ -129,14 +129,11 @@ def pull_labels(bridge: str, project_name_like: str, for_date: str):
 def pull_all_labels(bridge: str):
     myProject = get_project(bridge)
     labels: List[Dict] = []
-    labels_to_return: List[Dict] = []
     label_rows = myProject.label_rows
     for label_row in label_rows:
         if label_row.get('label_status') == 'LABELLED':
             full_label_row = myProject.get_label_row(label_row.get('label_hash'))
             labels.append({"label": full_label_row, "classification": get_classification_answer_value(full_label_row)})
-    for label in labels:
-        labels_to_return.append({""})
     return labels       
 
 def get_classification_answer_value(data: dict):

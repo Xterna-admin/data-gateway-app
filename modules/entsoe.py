@@ -10,7 +10,7 @@ import pytz
 from pytz import country_timezones, timezone
 
 def get_entsoe_data_all_countries(start: str, end: str):
-    country_list = ['AT','BA','BE','BG','CH','CZ','DE','DK','EE','ES','FI','FR','GR','HR','HU','IE','IT','LT','LU','LV','ME','MK','NL','NO','PL','PT','RO','RS','SE','SK','XK']
+    country_list = ['AT','BA','BE','BG','CH','CZ','DE','DK','EE','ES','FI','FR','GR','HR','HU','IE','IT','LT','LU','LV','ME','MK','NL','NO','PL','PT','RO','RS','SE','SK','XK','SI','GE']
     all_data = {}
     for country in country_list:
         print(f"Getting data for {country}")
@@ -173,6 +173,3 @@ def archive_converted_files(input_dir: str, output_dir: str):
 
     print(f"Processed {len(os.listdir(input_directory))} files.")
     return archived_files
-
-
-    print(f"Archived {len(os.listdir(output_directory))} files.")

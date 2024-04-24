@@ -24,6 +24,7 @@ def upload_image_file(file_name: str, bridge: str = 'test', dataset: Dataset = N
     # check if file exists and is > 25000 bytes in size
     if Path(file).is_file() and Path(file).stat().st_size > 25000:
         result = upload_image(file, bridge, dataset=dataset)
+        print(f"upload_image {file} result {result}")
         # check if the result is a dictionary and the file_link is in the dictionary and > 0 in length
         if result and 'file_link' in result and len(result['file_link']) > 0:
             print(f"Uploaded {file} to {result['file_link']}")

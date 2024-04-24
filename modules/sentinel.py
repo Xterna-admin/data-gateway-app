@@ -23,8 +23,9 @@ token = [None]
 
 def get_oauth_token():
 
-    if token[0]:
+    if token[0] is not None and 'access_token' in token[0] and token[0]['expires_at'] > datetime.now().timestamp():
         return token[0]['access_token']
+    print(f"Sentinel access token has expired, getting a new one")
     # Your client credentials
     client_id = get_sentinel_clientId()
     client_secret = get_sentinel_clientSecret()
@@ -34,9 +35,10 @@ def get_oauth_token():
     oauth = OAuth2Session(client=client)
 
     # Get token for the session
-    token[0] = oauth.fetch_token(token_url='https://services.sentinel-hub.com/oauth/token',
+    fetch_token = oauth.fetch_token(token_url='https://services.sentinel-hub.com/oauth/token',
                             client_secret=client_secret, include_client_id=True)
-
+    print(f"Token retrieved!")
+    token[0] = fetch_token
     return token[0]['access_token']
 
 def get_sh_config():
@@ -78,10 +80,12 @@ def download_image_for_station(station: Dict, in_date: str, dy: str = None):
     return response
 
 def download_images_for_date(date, stations, existing_images):
+    print(f"Downloading images for date {date}")
     date_images = []
     in_date = date.strftime("%d-%m-%Y")
     dy = date.strftime("%Y-%m-%d")
     for station in stations:
+        print(f"Downloading image for station {station} on {in_date}")
         if not station['collectionID']:
             continue
         station_name = station['station'].replace(' ', '-')
@@ -105,8 +109,10 @@ def download_all_sat_images_between_dates(data: str, args: Dict):
 
     # Create a thread pool and execute
     with ThreadPoolExecutor(max_workers=7) as executor:
+        print(f"In ThreadPoolExecutor for {args['start_date']} to {end_date}")
         # Submit tasks for each date in parallel
         future_tasks = {executor.submit(download_images_for_date, date, stations, existing_images): date for date in get_dates_between(args['start_date'], end_date)}
+        print(f"Submitted tasks {future_tasks}")
 
         # Gather results
         for future in as_completed(future_tasks):
@@ -122,6 +128,7 @@ def get_dates_between(start_date, end_date):
     start_date = datetime.strptime(start_date, "%Y-%m-%d")
     delta = end_date - start_date
     for i in range(delta.days + 1):
+        print(f"Yielding date {start_date + timedelta(days=i)}")
         yield start_date + timedelta(days=i)
 
 def get_available_data_collections():

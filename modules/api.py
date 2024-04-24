@@ -93,6 +93,7 @@ def encord_labels_all():
   bridge = request.args.get('bridge', 'forward')
   from_date = request.args.get('from_date', '2022-10-18')
   all_labels = sync_encord_labels(bridge, from_date)
+  print(f'All labels: {all_labels}')
   format = request.args.get('format', 'simple')
   media_type = request.args.get('media_type', 'csv')
   data_to_return = []
@@ -134,17 +135,17 @@ def transform_labels2(all_labels):
     'last_edited_at': label.last_edited_at,
   } for label in all_labels]
 
+# http://localhost:6969/encord/upload_all_images?bridge=forward
 @app.route('/encord/upload_all_images')
 def encord_upload_all_images():
-  print(request.args)
   response = upload_all_images(request.args.get('bridge', 'test'))
+  print(f"Uploaded {len(response)} images")
   return jsonify(response)
 
 # http://localhost:6969/encord/upload_image?filename=Andong-power-station-12-01-2024.jpg
 # {"data_hash":"d13cf1b6-a794-4428-b11e-d6555264a645","file_link":"cord-images-prod/19emyUB3TaSkhuacBApD0LpwapD3/d13cf1b6-a794-4428-b11e-d6555264a645","title":"Andong-power-station-12-01-2024.jpg"}
 @app.route('/encord/upload_image')
 def encord_upload_image():
-  print(request.args)
   filename = request.args.get('filename')
   return jsonify(upload_image_file(filename))
 
@@ -202,6 +203,7 @@ def encord_sync_station_image_yesterday():
 def download_all_station_images():
   data = request.json
   args = request.args.to_dict()
+  print('About to start download')
   # Start a new thread to process the request
   threading.Thread(target=download_all_sat_images_between_dates, args=(data, args)).start()
   return jsonify({'message': 'Request accepted'}), 201

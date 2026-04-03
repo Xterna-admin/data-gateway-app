@@ -26,7 +26,14 @@ def get_entsoe_data(country_code: str, start: str, end: str):
     start_pd = pd.Timestamp(start, tz=tz_str)
     end_pd = pd.Timestamp(end, tz=tz_str)
     
-    ts = client.query_generation(country_code, start=start_pd,end=end_pd, psr_type=None)
+    try:
+        ts = client.query_generation(country_code, start=start_pd,end=end_pd, psr_type=None)
+    except AttributeError as e:
+        # entsoe-py bug: some API responses contain <point> elements without a <position>
+        # child, causing an AttributeError in series_parsers.py. Return an error dict instead
+        # of crashing. See: https://github.com/EnergieID/entsoe-py/issues
+        app.logger.error(f"Failed to parse ENTSO-E response for {country_code}: {e}")
+        return {"error": f"Failed to parse ENTSO-E response for {country_code}", "country": country_code}
     return transform_to_csv(json.loads(ts.to_json()), country_code)
 
 def is_string_in_array(target_string, string_array):

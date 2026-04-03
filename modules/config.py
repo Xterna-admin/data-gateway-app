@@ -24,7 +24,7 @@ def get_entsoe_api_key():
 def get_sentinel_clientId():
     if (os.getenv('SENTINEL_CLIENT_ID') == None):
         print("Please provide a Sentinel Client ID in .env file.")
-    return os.getenv('SENTINEL_CLIENT_ID', None) 
+    return os.getenv('SENTINEL_CLIENT_ID', None)
 
 def get_sentinel_clientSecret():
     if (os.getenv('SENTINEL_CLIENT_SECRET') == None):
@@ -34,7 +34,7 @@ def get_sentinel_clientSecret():
 def get_stations_csv_path():
     if (os.getenv('STATIONS_CSV_PATH') == None):
         print("Please provide a Stations CSV Path in .env file.")
-    return os.getenv('STATIONS_CSV_PATH', None) 
+    return os.getenv('STATIONS_CSV_PATH', None)
 
 def get_test_dataset_id():
     if (os.getenv('ENCORD_TEST_DATASET') == None):
@@ -85,7 +85,7 @@ def get_dataset_id(bridge: str):
         return get_catchups_bridge_dataset_id()
     else:
         return get_test_dataset_id()
-    
+
 def get_project_hash(bridge: str):
     if bridge == "forward":
         return get_encord_forward_bridge_project()

@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List
 import json
+import time
 
 from flask import jsonify
 
@@ -108,7 +109,7 @@ def download_all_sat_images_between_dates(data: str, args: Dict):
     existing_images = load_existing_encord_images()
 
     # Create a thread pool and execute
-    with ThreadPoolExecutor(max_workers=7) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         print(f"In ThreadPoolExecutor for {args['start_date']} to {end_date}")
         # Submit tasks for each date in parallel
         future_tasks = {executor.submit(download_images_for_date, date, stations, existing_images): date for date in get_dates_between(args['start_date'], end_date)}
@@ -142,7 +143,7 @@ def get_stations_list():
     stations = loadStationsFromCsv(get_stations_csv_path())
     return stations
 
-def do_download_image_for_station(station: Dict, date: str, image_filename: str):
+def do_download_image_for_station(station: Dict, date: str, image_filename: str, max_retries: int = 5):
     token = get_oauth_token()
     print(f"Downloading on {date} for station {station}")
     bearer = "Bearer {}".format(token)
@@ -188,17 +189,24 @@ def do_download_image_for_station(station: Dict, date: str, image_filename: str)
     "evalscript": "//VERSION=3\n//True Color\n\nfunction setup() {\n  return {\n    input: [\"Red\", \"Green\", \"Blue\", \"dataMask\"],\n    output: { bands: 4 }\n  };\n}\n\nfunction evaluatePixel(sample) {\n  return [sample.Red/3000, \n          sample.Green/3000, \n          sample.Blue/3000,\n          sample.dataMask];\n}"
     }
 
-    response:requests.Response = requests.post(url, headers=headers, json=data)
-    if response.status_code != 200:
-        print(f"Error downloading image for station {station} on {date} with response code {response.status_code} and content {response.content}")
-        return {'image_filename': image_filename, 'size': -1, 'status': 'error'}
-    # save jpeg image bytes to response to file
-    with open(get_images_path() + image_filename, 'wb') as f:
-        f.write(response.content)
+    for attempt in range(max_retries):
+        response: requests.Response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            # save jpeg image bytes to file
+            with open(get_images_path() + image_filename, 'wb') as f:
+                f.write(response.content)
+            file_size = Path(get_images_path() + image_filename).stat().st_size
+            return {'image_filename': image_filename, 'size': file_size, 'status': 'success'}
+        elif response.status_code == 429:
+            retry_after = int(response.headers.get('Retry-After', 2 ** (attempt + 1)))
+            print(f"Rate limited for station {station} on {date}, retrying in {retry_after}s (attempt {attempt + 1}/{max_retries})")
+            time.sleep(retry_after)
+        else:
+            print(f"Error downloading image for station {station} on {date} with response code {response.status_code} and content {response.content}")
+            return {'image_filename': image_filename, 'size': -1, 'status': 'error'}
 
-    # get the file size
-    file_size = Path(get_images_path() + image_filename).stat().st_size
-    return {'image_filename': image_filename, 'size': file_size, 'status': 'success'}
+    print(f"Error downloading image for station {station} on {date} with response code {response.status_code} and content {response.content}")
+    return {'image_filename': image_filename, 'size': -1, 'status': 'error'}
 
 def load_json_from_file(file_path):
     try:
@@ -228,14 +236,14 @@ def load_existing_encord_images():
         # Check if data is a list
         if not isinstance(data, list):
             raise ValueError("JSON data is not an array")
-        
+
         # Store the data in a list of dictionaries
         key_value_structure = {}
         for item in data:
             key_value_structure[extract_filename_part(item['data_title'])] = item['data_hash']
 
         return key_value_structure
-    
+
     except Exception as e:
         print("An error occurred:", e)
 
@@ -245,7 +253,7 @@ def check_for_existing_encord_image(dictionary, substring):
             if substring in key:
                 return True
         return False
-    
+
     except Exception as e:
         print("An error occurred:", e)
 

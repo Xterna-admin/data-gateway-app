@@ -1,4 +1,4 @@
-# Import Libraries 
+# Import Libraries
 from app import app
 from flask import jsonify
 from flask import request
@@ -7,8 +7,8 @@ import threading
 import csv
 import uuid
 
-from modules.encordClassificationsSync import sync_encord_labels
-from modules.encordSync import list_data_rows, upload_all_images, pull_labels, upload_image_file
+from modules.encordClassificationsSync import sync_encord_labels, sync_encord_labels_v2
+from modules.encordSync import list_data_rows, pull_labels_v2, upload_all_images, pull_labels, upload_image_file
 from modules.sentinel import delete_images_with_date_format_check, download_all_sat_images_between_dates, download_yesterday_image_for_station, get_sat_images_for_stations, get_stations_list
 from modules.entsoe import archive_converted_files, convert_files_new_format, get_entsoe_data, get_entsoe_data_all_countries
 from modules.config import get_encord_csv_path, get_encord_legacy_bridge_project, get_entsoe_archive_dir, get_entsoe_csv_path, get_entsoe_output_dir
@@ -24,35 +24,35 @@ def api():
   # return in JSON format. (For API)
   return jsonify({"message":"Hello from Flask!"})
 
-# Example: http://localhost:6969/entsoe/all?start=20230101&end=20230102 
+# Example: http://localhost:6969/entsoe/all?start=20230101&end=20230102
 @app.route('/entsoe/all')
 def entsoe_all():
   start = request.args.get('start')
   end = request.args.get('end')
- 
+
   return get_entsoe_data_all_countries(start, end)
 
-# Example: http://localhost:6969/entsoe?country_code=AT&start=20230101&end=20230102 
+# Example: http://localhost:6969/entsoe?country_code=AT&start=20230101&end=20230102
 @app.route('/entsoe')
 def entsoe():
   country_code = request.args.get('country_code')
   start = request.args.get('start')
   end = request.args.get('end')
- 
+
   return get_entsoe_data(country_code, start, end)
 
 @app.route('/entsoe/convert_files')
 def entsoe_convert_files():
   input_dir = get_entsoe_csv_path()
   output_dir = get_entsoe_output_dir()
- 
+
   return convert_files_new_format(input_dir, output_dir)
 
 @app.route('/entsoe/archive_converted_files')
 def entsoe_archive_files():
   input_dir = get_entsoe_output_dir()
   output_dir = get_entsoe_archive_dir()
- 
+
   return archive_converted_files(input_dir, output_dir)
 
 # http://localhost:6969/encord?bridge=legacy
@@ -85,14 +85,14 @@ def encord_labels():
   for_date = request.args.get('for_date', dy)
   print(for_date)
 
-  return jsonify(pull_labels(project_hash=project_hash, project_name_like=project_name_like, for_date=for_date))
+  return jsonify(pull_labels_v2(project_hash=project_hash, project_name_like=project_name_like, for_date=for_date))
 
 # http://localhost:6969/encord/labels/all?bridge=catchups&media_type=csv|json&format=simple|full&from_date=2024-03-20
 @app.route('/encord/labels/all')
 def encord_labels_all():
   bridge = request.args.get('bridge', 'forward')
   from_date = request.args.get('from_date', '2022-10-18')
-  all_labels = sync_encord_labels(bridge, from_date)
+  all_labels = sync_encord_labels_v2(bridge, from_date)
   print(f'All labels: {all_labels}')
   format = request.args.get('format', 'simple')
   media_type = request.args.get('media_type', 'csv')
@@ -105,10 +105,12 @@ def encord_labels_all():
     return jsonify(data_to_return)
   else:
     return save_to_csv(data_to_return, bridge)
-  
+
 def save_to_csv(data, bridge):
   file_name = f'{get_encord_csv_path()}/encord_labels_{bridge}_{uuid.uuid4()}.csv'
   print(f'Saving to file: {file_name}')
+  if not data:
+    return {'filename': None, 'error': 'No data to save'}
   with open(file_name, 'w', newline='') as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=data[0].keys())
     writer.writeheader()
